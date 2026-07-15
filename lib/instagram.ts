@@ -103,6 +103,7 @@ async function criarContainer(input: PostInput): Promise<string> {
       collaborators,
       access_token: token,
     });
+    await esperarContainer(r.id, token);
     return r.id;
   }
 
@@ -132,7 +133,8 @@ async function criarContainer(input: PostInput): Promise<string> {
     if (item.tipo === "imagem") params.image_url = item.url;
     else params.video_url = item.url;
     const r = await igPost(`${igUserId}/media`, params);
-    if (item.tipo === "video") await esperarContainer(r.id, token);
+    // espera processar (imagem OU vídeo) — senão dá "Media ID is not available"
+    await esperarContainer(r.id, token);
     return r.id;
   }
 
