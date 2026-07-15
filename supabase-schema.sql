@@ -20,7 +20,7 @@ create table if not exists public.bt_ig_posts (
   status         text not null default 'rascunho'
                  check (status in ('rascunho','agendado','publicando','publicado','erro')),
   tipo           text not null
-                 check (tipo in ('imagem','carrossel','reels')),
+                 check (tipo in ('imagem','carrossel','reels','stories')),
   legenda        text default '',
   colaboradores  text[] default '{}',          -- usernames dos collabs (máx 3)
   compartilhar_feed boolean default true,      -- reels: também no feed
