@@ -8,6 +8,7 @@
  * Assim posts manuais (mídia do bucket Supabase) não casam e não marcam nada.
  */
 import type { MidiaItem } from "./instagram";
+import { getGithubPat } from "./config";
 
 const OWNER = "brunotropolis";
 const REPO = "babytalks-conteudo";
@@ -16,20 +17,17 @@ const API = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${FILE}`;
 
 const nomeArquivo = (u: string) => (u || "").split("/").pop() || "";
 
-function ghHeaders() {
-  return {
-    Authorization: `token ${process.env.GITHUB_PAT}`,
-    Accept: "application/vnd.github+json",
-    "User-Agent": "babytalks-studio",
-  };
-}
-
 /** Marca no plano o item cuja mídia bate com a publicada (+ permalink + data). Best-effort. */
 export async function marcarPostado(midia: MidiaItem[], permalink?: string): Promise<void> {
   const nomes = (midia || []).map((m) => nomeArquivo(m.url)).filter(Boolean);
-  if (!process.env.GITHUB_PAT || nomes.length === 0) return;
+  const pat = await getGithubPat();
+  if (!pat || nomes.length === 0) return;
 
-  const headers = ghHeaders();
+  const headers = {
+    Authorization: `token ${pat}`,
+    Accept: "application/vnd.github+json",
+    "User-Agent": "babytalks-studio",
+  };
   const g = await fetch(`${API}?ref=main`, { headers, cache: "no-store" });
   if (!g.ok) throw new Error(`GitHub GET posts.json: ${g.status}`);
   const file = await g.json();

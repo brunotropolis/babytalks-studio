@@ -22,6 +22,13 @@ export function getIgUserId(): string {
   return process.env.BABYTALKS_IG_USER_ID || "";
 }
 
+/** Token do GitHub (pro writeback no hub): bt_ig_config 'github_pat' ou env. */
+export async function getGithubPat(): Promise<string> {
+  const sb = supabaseAdmin();
+  const { data } = await sb.from("bt_ig_config").select("valor").eq("chave", "github_pat").maybeSingle();
+  return data?.valor || process.env.GITHUB_PAT || "";
+}
+
 /** Renova o token de longa duração e persiste no banco. Idempotente. */
 export async function refreshToken(): Promise<{ ok: boolean; expiraEmDias?: number; erro?: string }> {
   try {
