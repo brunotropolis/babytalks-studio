@@ -15,10 +15,12 @@ const GRAPH = "https://graph.instagram.com/v21.0";
 
 export type MidiaItem = { url: string; tipo: "imagem" | "video" };
 
+export type TipoPost = "imagem" | "carrossel" | "reels" | "stories";
+
 export type PostInput = {
   igUserId: string;
   token: string;
-  tipo: "imagem" | "carrossel" | "reels";
+  tipo: TipoPost;
   legenda?: string;
   midia: MidiaItem[];
   colaboradores?: string[]; // usernames, máx 3
@@ -117,6 +119,20 @@ async function criarContainer(input: PostInput): Promise<string> {
       access_token: token,
     });
     await esperarContainer(r.id, token);
+    return r.id;
+  }
+
+  if (tipo === "stories") {
+    const item = midia[0];
+    if (!item) throw new IgError("Stories exige 1 foto ou vídeo.");
+    const params: Record<string, string | undefined> = {
+      media_type: "STORIES",
+      access_token: token,
+    };
+    if (item.tipo === "imagem") params.image_url = item.url;
+    else params.video_url = item.url;
+    const r = await igPost(`${igUserId}/media`, params);
+    if (item.tipo === "video") await esperarContainer(r.id, token);
     return r.id;
   }
 

@@ -24,21 +24,24 @@ export default function Login() {
 
   return (
     <main className="min-h-screen flex items-center justify-center p-6">
-      <form onSubmit={entrar} className="w-full max-w-sm bg-ink/60 border border-white/10 rounded-2xl p-8">
-        <h1 className="text-xl font-semibold mb-1">Baby Talks Studio</h1>
-        <p className="text-sm text-white/50 mb-6">Postagem no @babytalks.evento</p>
+      <form onSubmit={entrar} className="w-full max-w-sm bg-white border border-lavanda rounded-3xl p-9 shadow-[0_20px_50px_rgba(31,42,86,.08)]">
+        <div className="text-center mb-7">
+          <span className="inline-block text-[11px] tracking-[2.5px] uppercase text-magenta font-bold mb-2">Baby Talks</span>
+          <h1 className="font-serif text-3xl text-azul leading-tight">Studio</h1>
+          <p className="text-sm text-azul-suave mt-2">Publicar no @babytalks.evento</p>
+        </div>
         <input
           type="password"
           value={senha}
           onChange={(e) => setSenha(e.target.value)}
           placeholder="Senha"
-          className="w-full rounded-lg bg-black/30 border border-white/10 px-4 py-3 outline-none focus:border-accent"
+          className="w-full rounded-xl bg-branco border border-lavanda px-4 py-3 outline-none focus:border-lilas text-azul"
           autoFocus
         />
-        {erro && <p className="text-red-400 text-sm mt-2">{erro}</p>}
+        {erro && <p className="text-magenta text-sm mt-2">{erro}</p>}
         <button
           disabled={loading}
-          className="mt-4 w-full rounded-lg bg-accent text-ink font-semibold py-3 disabled:opacity-50"
+          className="mt-4 w-full rounded-xl bg-verde hover:bg-verde-bright text-white font-bold py-3 disabled:opacity-50 transition"
         >
           {loading ? "Entrando…" : "Entrar"}
         </button>
