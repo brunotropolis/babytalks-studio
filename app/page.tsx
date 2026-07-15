@@ -56,28 +56,33 @@ export default function Studio() {
     setEnviando(true);
     setResultado(null);
     const agendadoPara = agendar && quando ? new Date(quando).toISOString() : null;
-    const r = await fetch("/api/submit", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        tipo,
-        legenda: ehStories ? "" : legenda,
-        colaboradores: ehStories ? [] : colabList,
-        compartilharFeed,
-        agendadoPara,
-        midia: prontos.map((m) => ({ url: m.url, tipo: m.tipo })),
-      }),
-    });
-    const j = await r.json();
-    setEnviando(false);
-    if (j.ok && j.agendado) {
-      setResultado({ ok: true, msg: "Agendado! 🗓️ Aparece na lista de agendados." });
-      limpar();
-    } else if (j.ok) {
-      setResultado({ ok: true, msg: "Publicado! 🎉", link: j.permalink });
-      limpar();
-    } else {
-      setResultado({ ok: false, msg: j.erro || "Falha ao publicar" });
+    try {
+      const r = await fetch("/api/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tipo,
+          legenda: ehStories ? "" : legenda,
+          colaboradores: ehStories ? [] : colabList,
+          compartilharFeed,
+          agendadoPara,
+          midia: prontos.map((m) => ({ url: m.url, tipo: m.tipo })),
+        }),
+      });
+      const j = await r.json().catch(() => ({ ok: false, erro: `HTTP ${r.status}` }));
+      if (j.ok && j.agendado) {
+        setResultado({ ok: true, msg: "Agendado! 🗓️ Aparece na lista de agendados." });
+        limpar();
+      } else if (j.ok) {
+        setResultado({ ok: true, msg: "Publicado! 🎉", link: j.permalink });
+        limpar();
+      } else {
+        setResultado({ ok: false, msg: j.erro || "Falha ao publicar" });
+      }
+    } catch (e: any) {
+      setResultado({ ok: false, msg: "Conexão caiu antes de terminar. Confira em Agendados se saiu, e tente de novo se precisar." });
+    } finally {
+      setEnviando(false);
     }
   }
 
@@ -187,8 +192,11 @@ export default function Studio() {
         disabled={!podeEnviar}
         className="w-full rounded-2xl bg-verde hover:bg-verde-bright text-white font-bold py-4 disabled:opacity-40 mt-5 transition text-[15px]"
       >
-        {enviando ? "Enviando…" : agendar ? "Agendar publicação" : "Publicar agora"}
+        {enviando ? (agendar ? "Agendando…" : "Publicando…") : agendar ? "Agendar publicação" : "Publicar agora"}
       </button>
+      {enviando && !agendar && (tipo === "carrossel" || tipo === "reels" || (tipo === "stories" && prontos[0]?.tipo === "video")) && (
+        <p className="text-center text-xs text-azul-suave mt-2">Aguarde — a Meta processa cada mídia, pode levar até ~1 min. Não feche a página.</p>
+      )}
 
       {resultado && (
         <div className={`mt-4 rounded-xl p-4 text-sm ${resultado.ok ? "bg-verde/12 text-verde" : "bg-magenta/12 text-magenta"}`}>

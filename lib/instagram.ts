@@ -152,7 +152,9 @@ async function criarContainer(input: PostInput): Promise<string> {
       params.video_url = item.url;
     }
     const r = await igPost(`${igUserId}/media`, params);
-    if (item.tipo === "video") await esperarContainer(r.id, token);
+    // espera CADA filho (imagem ou vídeo) terminar de processar — senão o
+    // container pai dá "Media ID is not available" na hora de publicar.
+    await esperarContainer(r.id, token);
     filhos.push(r.id);
   }
   const pai = await igPost(`${igUserId}/media`, {
@@ -162,6 +164,8 @@ async function criarContainer(input: PostInput): Promise<string> {
     collaborators,
     access_token: token,
   });
+  // e espera o próprio carrossel ficar pronto antes do media_publish
+  await esperarContainer(pai.id, token);
   return pai.id;
 }
 
