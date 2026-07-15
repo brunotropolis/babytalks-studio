@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
 type Tipo = "imagem" | "carrossel" | "reels" | "stories";
@@ -22,6 +22,33 @@ export default function Studio() {
   const [quando, setQuando] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [resultado, setResultado] = useState<{ ok: boolean; msg: string; link?: string } | null>(null);
+
+  // prefill vindo da "Da programação"
+  useEffect(() => {
+    const raw = typeof window !== "undefined" ? sessionStorage.getItem("bt_prefill") : null;
+    if (!raw) return;
+    sessionStorage.removeItem("bt_prefill");
+    try {
+      const p = JSON.parse(raw);
+      if (p.tipo) setTipo(p.tipo);
+      if (typeof p.legenda === "string") setLegenda(p.legenda);
+      if (Array.isArray(p.midia)) {
+        setMidia(p.midia.map((m: any, i: number) => ({
+          url: m.url,
+          tipo: m.tipo === "video" ? "video" : "imagem",
+          nome: m.url.split("/").pop() || `midia-${i}`,
+        })));
+      }
+      if (p.data) {
+        const quandoISO = `${p.data}T09:00`;
+        if (new Date(quandoISO).getTime() > Date.now()) {
+          setAgendar(true);
+          setQuando(quandoISO);
+        }
+      }
+      setResultado({ ok: true, msg: "Puxado da programação — revise e publique/agende. 👇" });
+    } catch { /* ignora prefill inválido */ }
+  }, []);
 
   const ehStories = tipo === "stories";
   const aceita = tipo === "reels" ? "video/*" : ehStories ? "image/*,video/*" : tipo === "imagem" ? "image/*" : "image/*,video/*";
@@ -98,9 +125,14 @@ export default function Studio() {
           <h1 className="font-serif text-3xl text-azul leading-tight">Studio</h1>
           <p className="text-sm text-azul-suave">Publicar no @babytalks.evento</p>
         </div>
-        <Link href="/agendados" className="text-sm font-semibold text-lilas-esc hover:text-magenta whitespace-nowrap">
-          Agendados →
-        </Link>
+        <div className="flex flex-col items-end gap-1.5">
+          <Link href="/programacao" className="text-sm font-semibold text-white bg-magenta hover:bg-magenta-suave rounded-full px-3 py-1.5 whitespace-nowrap transition">
+            📅 Da programação
+          </Link>
+          <Link href="/agendados" className="text-sm font-semibold text-lilas-esc hover:text-magenta whitespace-nowrap">
+            Agendados →
+          </Link>
+        </div>
       </header>
 
       {/* tipo */}
