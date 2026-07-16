@@ -20,11 +20,6 @@ type PlanoPost = {
 
 const TIPO_LABEL: Record<Tipo, string> = { imagem: "Foto", carrossel: "Carrossel", reels: "Reels", stories: "Stories" };
 
-function fmtData(d: string) {
-  try { return new Date(d + "T12:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }); }
-  catch { return d; }
-}
-
 export default function Programacao() {
   const [posts, setPosts] = useState<PlanoPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -83,7 +78,7 @@ export default function Programacao() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs font-semibold text-azul">#{p.n} · {p.dia_semana} {fmtData(p.data)}</span>
+                    <span className="text-xs font-semibold text-azul">#{p.n}{p.fase_titulo ? ` · ${p.fase_titulo}` : ""}</span>
                     <span className="text-[11px] px-2 py-0.5 rounded-full bg-lavanda text-azul-suave font-semibold">{p.formato}</span>
                     {p.status === "PRONTO"
                       ? <span className="text-[11px] px-2 py-0.5 rounded-full bg-verde/15 text-verde font-semibold">pronto</span>
