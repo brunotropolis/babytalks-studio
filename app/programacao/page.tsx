@@ -53,6 +53,9 @@ export default function Programacao() {
 
   return (
     <main className="min-h-screen max-w-2xl mx-auto p-6">
+      <a href="https://conteudo.babytalks.com.br" className="inline-block text-sm font-semibold text-lilas-esc hover:text-magenta mb-4">
+        ← Central de Conteúdo
+      </a>
       <header className="flex items-end justify-between mb-6">
         <div>
           <span className="text-[11px] tracking-[2.5px] uppercase text-magenta font-bold">Baby Talks</span>
