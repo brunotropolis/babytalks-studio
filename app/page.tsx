@@ -298,12 +298,12 @@ export default function Studio() {
               {bibFiltrada.map((it) => {
                 const sel = midia.some((x) => x.url === it.url);
                 return (
-                  <button key={it.url} type="button" onClick={() => adicionarDaBiblioteca(it)} title={it.nome} className={`relative aspect-square rounded-lg overflow-hidden border ${sel ? "border-magenta ring-2 ring-magenta" : "border-lavanda hover:border-lilas"}`}>
+                  <button key={it.url} type="button" onClick={() => adicionarDaBiblioteca(it)} title={it.nome} style={{ aspectRatio: "1 / 1" }} className={`relative block w-full rounded-lg overflow-hidden border ${sel ? "border-magenta ring-2 ring-magenta" : "border-lavanda hover:border-lilas"}`}>
                     {it.tipo === "video"
-                      ? <video src={it.url} className="w-full h-full object-cover" muted />
+                      ? <video src={it.url} className="absolute inset-0 w-full h-full object-cover" muted />
                       // eslint-disable-next-line @next/next/no-img-element
-                      : <img src={it.url} alt="" loading="lazy" className="w-full h-full object-cover" />}
-                    {sel && <span className="absolute top-1 right-1 bg-magenta text-white rounded-full w-5 h-5 text-xs grid place-items-center">✓</span>}
+                      : <img src={it.url} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover" />}
+                    {sel && <span className="absolute top-1 right-1 bg-magenta text-white rounded-full w-5 h-5 text-xs grid place-items-center z-10">✓</span>}
                   </button>
                 );
               })}
