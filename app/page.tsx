@@ -167,6 +167,9 @@ export default function Studio() {
           <Link href="/agendados" className="text-sm font-semibold text-lilas-esc hover:text-magenta whitespace-nowrap">
             Agendados →
           </Link>
+          <Link href="/postados" className="text-sm font-semibold text-lilas-esc hover:text-magenta whitespace-nowrap">
+            Postados →
+          </Link>
         </div>
       </header>
 

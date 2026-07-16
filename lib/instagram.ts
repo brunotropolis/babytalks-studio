@@ -199,3 +199,27 @@ export async function renovarToken(token: string): Promise<{ token: string; expi
   const r = await igGet(`refresh_access_token?grant_type=ig_refresh_token`, token);
   return { token: r.access_token, expiraEm: r.expires_in };
 }
+
+export type MediaPublicado = {
+  id: string;
+  caption: string;
+  tipo: string; // IMAGE | VIDEO | CAROUSEL_ALBUM
+  thumb: string;
+  permalink: string;
+  timestamp: string;
+};
+
+/** Lista as mídias já publicadas na conta (o feed real do Instagram). */
+export async function listarMedia(token: string, igUserId: string, limit = 100): Promise<MediaPublicado[]> {
+  const fields = "id,caption,media_type,media_url,thumbnail_url,permalink,timestamp";
+  const r = await igGet(`${igUserId}/media?fields=${fields}&limit=${limit}`, token);
+  return (r.data || []).map((m: any) => ({
+    id: m.id,
+    caption: m.caption || "",
+    tipo: m.media_type || "",
+    // vídeo: thumbnail_url é o poster; foto/carrossel: media_url é a 1ª imagem
+    thumb: (m.media_type === "VIDEO" ? m.thumbnail_url : m.media_url) || m.thumbnail_url || m.media_url || "",
+    permalink: m.permalink || "",
+    timestamp: m.timestamp || "",
+  }));
+}
