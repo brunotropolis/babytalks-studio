@@ -160,15 +160,18 @@ export default function Studio() {
           <h1 className="font-serif text-3xl text-azul leading-tight">Studio</h1>
           <p className="text-sm text-azul-suave">Publicar no @babytalks.evento</p>
         </div>
-        <div className="flex flex-col items-end gap-1.5">
-          <Link href="/programacao" className="text-sm font-semibold text-white bg-magenta hover:bg-magenta-suave rounded-full px-3 py-1.5 whitespace-nowrap transition">
+        <div className="flex flex-wrap items-center justify-end gap-2 max-w-[62%]">
+          <Link href="/programacao" className="text-sm font-semibold text-white bg-magenta hover:bg-magenta-suave rounded-full px-3.5 py-1.5 whitespace-nowrap transition">
             📅 Da programação
           </Link>
-          <Link href="/agendados" className="text-sm font-semibold text-lilas-esc hover:text-magenta whitespace-nowrap">
-            Agendados →
+          <Link href="/calendario" className="text-sm font-semibold text-azul bg-white border border-lavanda hover:border-magenta hover:text-magenta rounded-full px-3.5 py-1.5 whitespace-nowrap transition">
+            🗓️ Calendário
           </Link>
-          <Link href="/postados" className="text-sm font-semibold text-lilas-esc hover:text-magenta whitespace-nowrap">
-            Postados →
+          <Link href="/agendados" className="text-sm font-semibold text-azul bg-white border border-lavanda hover:border-magenta hover:text-magenta rounded-full px-3.5 py-1.5 whitespace-nowrap transition">
+            ⏳ Agendados
+          </Link>
+          <Link href="/postados" className="text-sm font-semibold text-azul bg-white border border-lavanda hover:border-magenta hover:text-magenta rounded-full px-3.5 py-1.5 whitespace-nowrap transition">
+            ✅ Postados
           </Link>
         </div>
       </header>
