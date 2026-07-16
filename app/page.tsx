@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 type Tipo = "imagem" | "carrossel" | "reels" | "stories";
@@ -22,6 +22,12 @@ export default function Studio() {
   const [quando, setQuando] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [resultado, setResultado] = useState<{ ok: boolean; msg: string; link?: string } | null>(null);
+  // biblioteca de mídia do hub
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [bibAberta, setBibAberta] = useState(false);
+  const [bibItens, setBibItens] = useState<{ url: string; nome: string; pasta: string; tipo: "imagem" | "video" }[]>([]);
+  const [bibLoading, setBibLoading] = useState(false);
+  const [bibBusca, setBibBusca] = useState("");
 
   // prefill vindo da "Da programação"
   useEffect(() => {
@@ -70,7 +76,33 @@ export default function Studio() {
 
   const remover = (nome: string) => setMidia((m) => m.filter((x) => x.nome !== nome));
 
+  async function abrirBiblioteca() {
+    setBibAberta(true);
+    if (bibItens.length === 0) {
+      setBibLoading(true);
+      try {
+        const j = await (await fetch("/api/midia")).json();
+        setBibItens(j.arquivos || []);
+      } catch { /* ignora */ }
+      setBibLoading(false);
+    }
+  }
+
+  function adicionarDaBiblioteca(item: { url: string; nome: string; tipo: "imagem" | "video" }) {
+    setResultado(null);
+    const novo = { url: item.url, tipo: item.tipo, nome: item.nome };
+    setMidia((m) => {
+      if (tipo === "carrossel") {
+        if (m.some((x) => x.url === item.url)) return m; // sem duplicar
+        return [...m, novo];
+      }
+      return [novo];
+    });
+    if (tipo !== "carrossel") setBibAberta(false);
+  }
+
   const colabList = colabs.split(/[\s,]+/).map((s) => s.replace(/^@/, "").trim()).filter(Boolean).slice(0, 3);
+  const bibFiltrada = bibItens.filter((it) => (it.nome + " " + it.pasta).toLowerCase().includes(bibBusca.toLowerCase()));
   const prontos = midia.filter((m) => m.url && !m.enviando);
   const podeEnviar =
     !enviando &&
@@ -152,6 +184,15 @@ export default function Studio() {
 
       {/* mídia */}
       <label className="block mb-2 text-sm font-semibold text-azul-suave">Mídia</label>
+      <div className="flex gap-2 mb-3">
+        <button type="button" onClick={() => fileRef.current?.click()} className="flex-1 rounded-xl border border-lavanda bg-white hover:border-lilas py-2.5 text-sm font-semibold text-azul-suave transition">
+          ⬆️ Subir do computador
+        </button>
+        <button type="button" onClick={abrirBiblioteca} className="flex-1 rounded-xl border border-lavanda bg-white hover:border-magenta py-2.5 text-sm font-semibold text-magenta transition">
+          🖼️ Biblioteca
+        </button>
+        <input ref={fileRef} type="file" accept={aceita} multiple={multiplo} className="hidden" onChange={(e) => onEscolher(e.target.files)} />
+      </div>
       <div className="flex flex-wrap gap-3 mb-4">
         {midia.map((m) => (
           <div key={m.nome} className="relative w-24 h-24 rounded-xl overflow-hidden border border-lavanda bg-white">
@@ -166,10 +207,9 @@ export default function Studio() {
             <button onClick={() => remover(m.nome)} className="absolute top-1 right-1 bg-azul/80 text-white rounded-full w-5 h-5 text-xs leading-5">×</button>
           </div>
         ))}
-        <label className="w-24 h-24 rounded-xl border-2 border-dashed border-lilas-claro grid place-items-center cursor-pointer text-lilas-esc hover:border-magenta hover:text-magenta transition">
-          <span className="text-2xl">+</span>
-          <input type="file" accept={aceita} multiple={multiplo} className="hidden" onChange={(e) => onEscolher(e.target.files)} />
-        </label>
+        {midia.length === 0 && (
+          <div className="w-full text-xs text-azul-suave py-2">Escolha “Subir do computador” ou “Biblioteca”.</div>
+        )}
       </div>
 
       {/* legenda + collabs (não em stories) */}
@@ -236,6 +276,41 @@ export default function Studio() {
           {resultado.link && (
             <> <a href={resultado.link} target="_blank" className="underline font-semibold">ver post</a></>
           )}
+        </div>
+      )}
+
+      {bibAberta && (
+        <div className="fixed inset-0 z-50 bg-azul/40 flex items-end sm:items-center justify-center p-3" onClick={() => setBibAberta(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-lg max-h-[82vh] flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-lavanda">
+              <h3 className="font-serif text-lg text-azul">Biblioteca de mídia</h3>
+              <button onClick={() => setBibAberta(false)} className="text-azul-suave text-2xl leading-none">×</button>
+            </div>
+            <div className="p-3 border-b border-lavanda">
+              <input value={bibBusca} onChange={(e) => setBibBusca(e.target.value)} placeholder="Buscar por nome…" className="w-full rounded-lg bg-branco border border-lavanda px-3 py-2 text-sm outline-none focus:border-lilas text-azul" />
+            </div>
+            <div className="p-3 overflow-y-auto grid grid-cols-3 gap-2">
+              {bibLoading && <p className="col-span-3 text-sm text-azul-suave p-4 text-center">Carregando biblioteca…</p>}
+              {!bibLoading && bibFiltrada.length === 0 && <p className="col-span-3 text-sm text-azul-suave p-4 text-center">Nada encontrado.</p>}
+              {bibFiltrada.map((it) => {
+                const sel = midia.some((x) => x.url === it.url);
+                return (
+                  <button key={it.url} type="button" onClick={() => adicionarDaBiblioteca(it)} title={it.nome} className={`relative aspect-square rounded-lg overflow-hidden border ${sel ? "border-magenta ring-2 ring-magenta" : "border-lavanda hover:border-lilas"}`}>
+                    {it.tipo === "video"
+                      ? <video src={it.url} className="w-full h-full object-cover" muted />
+                      // eslint-disable-next-line @next/next/no-img-element
+                      : <img src={it.url} alt="" loading="lazy" className="w-full h-full object-cover" />}
+                    {sel && <span className="absolute top-1 right-1 bg-magenta text-white rounded-full w-5 h-5 text-xs grid place-items-center">✓</span>}
+                  </button>
+                );
+              })}
+            </div>
+            {tipo === "carrossel" && (
+              <div className="p-3 border-t border-lavanda">
+                <button onClick={() => setBibAberta(false)} className="w-full rounded-lg bg-verde hover:bg-verde-bright text-white font-bold py-2.5 transition">Pronto ({midia.length} selecionada{midia.length === 1 ? "" : "s"})</button>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </main>
