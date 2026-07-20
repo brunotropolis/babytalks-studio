@@ -22,6 +22,7 @@ export default function Studio() {
   const [quando, setQuando] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [resultado, setResultado] = useState<{ ok: boolean; msg: string; link?: string } | null>(null);
+  const [colabFreq, setColabFreq] = useState<Record<string, number>>({});
   // biblioteca de mídia do hub
   const fileRef = useRef<HTMLInputElement>(null);
   const [bibAberta, setBibAberta] = useState(false);
@@ -55,6 +56,30 @@ export default function Studio() {
       setResultado({ ok: true, msg: "Puxado da programação — revise e publique/agende. 👇" });
     } catch { /* ignora prefill inválido */ }
   }, []);
+
+  // histórico de collabs mais usados (por navegador)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("bt_colab_freq");
+      if (raw) setColabFreq(JSON.parse(raw));
+    } catch { /* ignora */ }
+  }, []);
+
+  function registrarColabs(list: string[]) {
+    if (!list.length) return;
+    setColabFreq((prev) => {
+      const next = { ...prev };
+      for (const c of list) next[c] = (next[c] || 0) + 1;
+      try { localStorage.setItem("bt_colab_freq", JSON.stringify(next)); } catch { /* ignora */ }
+      return next;
+    });
+  }
+
+  function addColab(handle: string) {
+    const atuais = colabs.split(/[\s,]+/).map((s) => s.replace(/^@/, "").trim()).filter(Boolean);
+    if (atuais.includes(handle) || atuais.length >= 3) return;
+    setColabs((c) => (c.trim() ? c.trim() + " @" + handle : "@" + handle));
+  }
 
   const ehStories = tipo === "stories";
   const aceita = tipo === "reels" ? "video/*" : ehStories ? "image/*,video/*" : tipo === "imagem" ? "image/*" : "image/*,video/*";
@@ -102,6 +127,11 @@ export default function Studio() {
   }
 
   const colabList = colabs.split(/[\s,]+/).map((s) => s.replace(/^@/, "").trim()).filter(Boolean).slice(0, 3);
+  const sugeridosColab = Object.entries(colabFreq)
+    .sort((a, b) => b[1] - a[1])
+    .map(([h]) => h)
+    .filter((h) => !colabList.includes(h))
+    .slice(0, 8);
   const bibFiltrada = bibItens.filter((it) => (it.nome + " " + it.pasta).toLowerCase().includes(bibBusca.toLowerCase()));
   const prontos = midia.filter((m) => m.url && !m.enviando);
   const podeEnviar =
@@ -130,9 +160,11 @@ export default function Studio() {
       });
       const j = await r.json().catch(() => ({ ok: false, erro: `HTTP ${r.status}` }));
       if (j.ok && j.agendado) {
+        registrarColabs(colabList);
         setResultado({ ok: true, msg: "Agendado! 🗓️ Aparece na lista de agendados." });
         limpar();
       } else if (j.ok) {
+        registrarColabs(colabList);
         setResultado({ ok: true, msg: "Publicado! 🎉", link: j.permalink });
         limpar();
       } else {
@@ -146,7 +178,8 @@ export default function Studio() {
   }
 
   function limpar() {
-    setMidia([]); setLegenda(""); setColabs(""); setQuando(""); setAgendar(false);
+    setMidia([]); setLegenda(""); setColabs(""); setQuando(""); setAgendar(false); setTipo("imagem");
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   return (
@@ -241,6 +274,22 @@ export default function Studio() {
           />
           {colabList.length > 0 && (
             <p className="text-xs text-azul-suave mt-1">Convite de collab para: {colabList.map((c) => "@" + c).join(", ")}</p>
+          )}
+          {sugeridosColab.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5 mt-2">
+              <span className="text-xs text-azul-suave">Mais usados:</span>
+              {sugeridosColab.map((h) => (
+                <button
+                  key={h}
+                  type="button"
+                  onClick={() => addColab(h)}
+                  disabled={colabList.length >= 3}
+                  className="text-xs font-semibold px-2.5 py-1 rounded-full bg-lilas/15 text-lilas-esc hover:bg-magenta hover:text-white transition disabled:opacity-40 disabled:hover:bg-lilas/15 disabled:hover:text-lilas-esc"
+                >
+                  @{h}
+                </button>
+              ))}
+            </div>
           )}
         </>
       )}

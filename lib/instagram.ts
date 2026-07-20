@@ -171,21 +171,55 @@ async function criarContainer(input: PostInput): Promise<string> {
   return pai.id;
 }
 
+// Erros transientes da Meta que costumam ser FALSO NEGATIVO no media_publish:
+// a API responde erro mas o post sai mesmo assim. Ex.: OAuthException code 2
+// "An unexpected error has occurred. Please retry your request later."
+const ERRO_TRANSIENTE = /unexpected error|please retry|try again|temporarily|reduce the amount/i;
+
 /** Publica um post completo (container -> media_publish). Retorna id + permalink. */
 export async function publicarPost(input: PostInput): Promise<PublishResult> {
   const creationId = await criarContainer(input);
-  const pub = await igPost(`${input.igUserId}/media_publish`, {
-    creation_id: creationId,
-    access_token: input.token,
-  });
-  let permalink: string | undefined;
+
+  // baseline: id da mídia mais recente ANTES de publicar — serve pra detectar se
+  // um erro transiente foi na verdade um falso negativo (o post saiu mesmo assim).
+  let baselineId: string | undefined;
   try {
-    const info = await igGet(`${pub.id}?fields=permalink`, input.token);
-    permalink = info.permalink;
-  } catch {
-    /* permalink é best-effort */
+    const antes = await listarMedia(input.token, input.igUserId, 1);
+    baselineId = antes[0]?.id;
+  } catch { /* best-effort */ }
+
+  try {
+    const pub = await igPost(`${input.igUserId}/media_publish`, {
+      creation_id: creationId,
+      access_token: input.token,
+    });
+    let permalink: string | undefined;
+    try {
+      const info = await igGet(`${pub.id}?fields=permalink`, input.token);
+      permalink = info.permalink;
+    } catch {
+      /* permalink é best-effort */
+    }
+    return { igMediaId: pub.id, permalink };
+  } catch (e: any) {
+    const msg: string = e?.message || "";
+    const code = (e?.raw as any)?.error?.code;
+    const transiente = ERRO_TRANSIENTE.test(msg) || code === 2;
+    if (!transiente) throw e;
+    // Confere no feed real por até ~30s se um post novo apareceu. Se apareceu,
+    // o erro era falso negativo: retorna sucesso com o post que de fato saiu.
+    for (let i = 0; i < 6; i++) {
+      await new Promise((r) => setTimeout(r, 5000));
+      try {
+        const agora = await listarMedia(input.token, input.igUserId, 1);
+        const novo = agora[0];
+        if (novo && novo.id !== baselineId) {
+          return { igMediaId: novo.id, permalink: novo.permalink };
+        }
+      } catch { /* segue tentando */ }
+    }
+    throw e; // realmente não saiu
   }
-  return { igMediaId: pub.id, permalink };
 }
 
 /** Descobre o IG user id a partir do token (para bootstrap/config). */
