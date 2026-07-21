@@ -168,13 +168,20 @@ export default function Studio() {
         setResultado({ ok: true, msg: "Publicado! 🎉", link: j.permalink });
         limpar();
       } else {
-        setResultado({ ok: false, msg: j.erro || "Falha ao publicar" });
+        setResultado({ ok: false, msg: msgErro(j.erro) });
       }
     } catch (e: any) {
       setResultado({ ok: false, msg: "Conexão caiu antes de terminar. Confira em Agendados se saiu, e tente de novo se precisar." });
     } finally {
       setEnviando(false);
     }
+  }
+
+  function msgErro(erro?: string) {
+    const e = (erro || "").toLowerCase();
+    if (e.includes("invalid user id"))
+      return "Um dos @ de colaborador não pôde ser convidado (conta inexistente ou com convite de collab restrito). Dica: use só 1 collab por post, ou remova o collab e publique.";
+    return erro || "Falha ao publicar";
   }
 
   function limpar() {
