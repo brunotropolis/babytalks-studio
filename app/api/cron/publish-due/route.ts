@@ -24,7 +24,22 @@ export async function POST(req: NextRequest) {
   const resultados = [];
   for (const p of (pendentes || []) as PostRow[]) {
     const r = await publicarRegistro(p);
-    resultados.push({ id: p.id, ok: r.ok, erro: r.erro });
+    resultados.push({ id: p.id, ok: r.ok, erro: r.erro, semCollab: r.semCollab, permalink: r.permalink });
   }
+
+  // avisa no WhatsApp quando um agendado saiu SEM o collab (Bruno não tá na tela)
+  const semCollab = resultados.filter((r) => r.ok && r.semCollab);
+  if (semCollab.length && process.env.WHAPI_TOKEN && process.env.BT_ALERT_PHONE) {
+    const linhas = semCollab.map((r) => `• ${r.permalink || r.id}`).join("\n");
+    await fetch("https://gate.whapi.cloud/messages/text", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${process.env.WHAPI_TOKEN}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        to: process.env.BT_ALERT_PHONE,
+        body: `📣 Baby Talks: um post agendado foi publicado SEM o collab (um @ de colaborador era inválido). Convide o parceiro manualmente no app.\n${linhas}`,
+      }),
+    }).catch(() => {});
+  }
+
   return NextResponse.json({ ok: true, publicados: resultados.length, resultados });
 }

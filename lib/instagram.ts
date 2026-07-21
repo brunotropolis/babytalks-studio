@@ -28,7 +28,7 @@ export type PostInput = {
   coverUrl?: string; // reels
 };
 
-export type PublishResult = { igMediaId: string; permalink?: string };
+export type PublishResult = { igMediaId: string; permalink?: string; semCollab?: boolean };
 
 class IgError extends Error {
   constructor(msg: string, readonly raw?: unknown) {
@@ -178,7 +178,24 @@ const ERRO_TRANSIENTE = /unexpected error|please retry|try again|temporarily|red
 
 /** Publica um post completo (container -> media_publish). Retorna id + permalink. */
 export async function publicarPost(input: PostInput): Promise<PublishResult> {
-  const creationId = await criarContainer(input);
+  // 1) cria o container. Se um @ de colaborador for inválido, a Meta responde
+  // "Invalid user id" e bloqueia o post inteiro. Como isso acontece na criação
+  // do container (nada foi publicado ainda), dá pra publicar SEM os collabs e
+  // avisar depois. Sinaliza via semCollab pra UI/log deixar claro.
+  let semCollab = false;
+  let creationId: string;
+  try {
+    creationId = await criarContainer(input);
+  } catch (e: any) {
+    const m: string = (e?.message || "").toLowerCase();
+    const temCollab = (input.colaboradores || []).length > 0;
+    if (temCollab && m.includes("invalid user id")) {
+      creationId = await criarContainer({ ...input, colaboradores: [] });
+      semCollab = true;
+    } else {
+      throw e;
+    }
+  }
 
   // baseline: id da mídia mais recente ANTES de publicar — serve pra detectar se
   // um erro transiente foi na verdade um falso negativo (o post saiu mesmo assim).
@@ -200,7 +217,7 @@ export async function publicarPost(input: PostInput): Promise<PublishResult> {
     } catch {
       /* permalink é best-effort */
     }
-    return { igMediaId: pub.id, permalink };
+    return { igMediaId: pub.id, permalink, semCollab };
   } catch (e: any) {
     const msg: string = e?.message || "";
     const code = (e?.raw as any)?.error?.code;
@@ -214,7 +231,7 @@ export async function publicarPost(input: PostInput): Promise<PublishResult> {
         const agora = await listarMedia(input.token, input.igUserId, 1);
         const novo = agora[0];
         if (novo && novo.id !== baselineId) {
-          return { igMediaId: novo.id, permalink: novo.permalink };
+          return { igMediaId: novo.id, permalink: novo.permalink, semCollab };
         }
       } catch { /* segue tentando */ }
     }

@@ -165,7 +165,13 @@ export default function Studio() {
         limpar();
       } else if (j.ok) {
         registrarColabs(colabList);
-        setResultado({ ok: true, msg: "Publicado! 🎉", link: j.permalink });
+        setResultado({
+          ok: true,
+          msg: j.semCollab
+            ? "Publicado! 🎉 Mas saiu SEM o collab (um @ era inválido). Convide o parceiro manualmente no app."
+            : "Publicado! 🎉",
+          link: j.permalink,
+        });
         limpar();
       } else {
         setResultado({ ok: false, msg: msgErro(j.erro) });

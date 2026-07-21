@@ -14,7 +14,7 @@ export type PostRow = {
 };
 
 /** Publica UM registro de post e atualiza seu status no banco. */
-export async function publicarRegistro(post: PostRow): Promise<{ ok: boolean; igMediaId?: string; permalink?: string; erro?: string }> {
+export async function publicarRegistro(post: PostRow): Promise<{ ok: boolean; igMediaId?: string; permalink?: string; erro?: string; semCollab?: boolean }> {
   const sb = supabaseAdmin();
   await sb.from("bt_ig_posts").update({ status: "publicando" }).eq("id", post.id);
   try {
@@ -34,6 +34,8 @@ export async function publicarRegistro(post: PostRow): Promise<{ ok: boolean; ig
       ig_media_id: r.igMediaId,
       permalink: r.permalink,
       publicado_em: new Date().toISOString(),
+      // nota visível no app quando saiu sem o collab (um @ era inválido)
+      erro: r.semCollab ? "⚠️ publicado SEM collab (um @ de colaborador era inválido — convide manualmente no app)" : null,
     }).eq("id", post.id);
     // fecha o loop: se a mídia veio do plano, marca o item como POSTADO (best-effort)
     try { await marcarPostado(post.midia || [], r.permalink); }
