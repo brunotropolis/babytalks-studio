@@ -23,6 +23,7 @@ export default function Studio() {
   const [enviando, setEnviando] = useState(false);
   const [resultado, setResultado] = useState<{ ok: boolean; msg: string; link?: string } | null>(null);
   const [colabFreq, setColabFreq] = useState<Record<string, number>>({});
+  const [marcBase, setMarcBase] = useState<{ nome: string; handles: string[]; grupo: string }[]>([]);
   // biblioteca de mídia do hub
   const fileRef = useRef<HTMLInputElement>(null);
   const [bibAberta, setBibAberta] = useState(false);
@@ -65,6 +66,26 @@ export default function Studio() {
       if (raw) setColabFreq(JSON.parse(raw));
     } catch { /* ignora */ }
   }, []);
+
+  // base de palestrantes e marcas (pra clicar e carregar as @)
+  useEffect(() => {
+    fetch(`https://conteudo.babytalks.com.br/marcacoes.json?cb=${Math.floor(Date.now() / 3600000)}`)
+      .then((r) => r.json())
+      .then((j) => {
+        const lista: { nome: string; handles: string[]; grupo: string }[] = [];
+        for (const v of Object.values(j.palestrantes || {}) as any[]) lista.push({ nome: v.nome, handles: v.handles, grupo: "Palestrantes" });
+        for (const v of Object.values(j.parceiros || {}) as any[]) lista.push({ nome: v.nome, handles: v.handles, grupo: "Marcas parceiras" });
+        setMarcBase(lista);
+      })
+      .catch(() => { /* ignora */ });
+  }, []);
+
+  function carregarMarcacao(handles: string[]) {
+    const atuais = colabs.split(/[\s,]+/).map((s) => s.replace(/^@/, "").trim()).filter(Boolean);
+    const nova = [...atuais];
+    for (const h of handles) if (!nova.includes(h) && nova.length < 3) nova.push(h);
+    setColabs(nova.map((h) => "@" + h).join(" "));
+  }
 
   function registrarColabs(list: string[]) {
     if (!list.length) return;
@@ -302,6 +323,41 @@ export default function Studio() {
                 >
                   @{h}
                 </button>
+              ))}
+            </div>
+          )}
+
+          {/* palestrantes e marcas — clica e carrega as @ */}
+          {marcBase.length > 0 && (
+            <div className="mt-3 rounded-xl border border-lavanda bg-branco p-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-azul-suave">Palestrantes e marcas — clique pra marcar</span>
+                {colabList.length > 0 && (
+                  <button type="button" onClick={() => setColabs("")} className="text-[11px] font-semibold text-magenta hover:underline">limpar</button>
+                )}
+              </div>
+              {["Palestrantes", "Marcas parceiras"].map((grupo) => (
+                <div key={grupo} className="mb-1.5 last:mb-0">
+                  <div className="text-[10px] uppercase tracking-wide text-lilas-esc font-bold mb-1">{grupo}</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {marcBase.filter((m) => m.grupo === grupo).map((m) => {
+                      const jaTem = m.handles.every((h) => colabList.includes(h));
+                      return (
+                        <button
+                          key={m.nome}
+                          type="button"
+                          onClick={() => carregarMarcacao(m.handles)}
+                          disabled={colabList.length >= 3 && !jaTem}
+                          title={m.handles.map((h) => "@" + h).join(" ")}
+                          className={`text-xs font-semibold px-2.5 py-1 rounded-full transition disabled:opacity-40
+                            ${jaTem ? "bg-magenta text-white" : "bg-white border border-lavanda text-azul hover:border-magenta hover:text-magenta"}`}
+                        >
+                          {jaTem ? "✓ " : ""}{m.nome}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               ))}
             </div>
           )}
