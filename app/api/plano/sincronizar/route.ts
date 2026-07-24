@@ -56,7 +56,8 @@ export async function POST(req: NextRequest) {
     if (!arquivos.length) continue;
     const midia = arquivos.map((f) => ({ url: urlMidia(f), tipo: ehVideo(f) ? "video" : "imagem" }));
     if (jaTem.has(midia[0].url)) continue; // ja agendado/postado
-    const quando = new Date(`${it.data}T${it.hora}:00`);
+    // horários do plano são de Brasília (BRT, UTC-3); o servidor é UTC, então fixa o offset
+    const quando = new Date(`${it.data}T${it.hora}:00-03:00`);
     if (isNaN(quando.getTime()) || quando.getTime() < agora + 60_000) continue; // so futuro
     const tipo = formatoParaTipo(it.fmt || full.formato || "");
     novos.push({
