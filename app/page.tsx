@@ -46,6 +46,9 @@ export default function Studio() {
           nome: m.url.split("/").pop() || `midia-${i}`,
         })));
       }
+      if (Array.isArray(p.colaboradores) && p.colaboradores.length) {
+        setColabs(p.colaboradores.slice(0, 3).map((h: string) => "@" + String(h).replace(/^@/, "")).join(" "));
+      }
       const quandoISO = p.quando || (p.data ? `${p.data}T09:00` : "");
       if (quandoISO && new Date(quandoISO).getTime() > Date.now()) {
         setAgendar(true);

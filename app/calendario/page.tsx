@@ -16,6 +16,8 @@ type Post = {
   plano?: boolean;
   n?: string | number;
   quando?: string;
+  colaboradores?: string[];
+  erro?: string | null;
 };
 
 const HUB = "https://conteudo.babytalks.com.br";
@@ -84,6 +86,7 @@ export default function Calendario() {
             tipo: fmtParaTipo(it.fmt || full?.formato || ""),
             legenda: full?.caption || it.linha || "",
             midia,
+            colaboradores: full?.colaboradores || it.colaboradores || [],
           });
         }
         setPosts([...reais, ...planejados]);
@@ -108,6 +111,7 @@ export default function Calendario() {
       tipo: p.tipo,
       legenda: p.tipo === "stories" ? "" : (p.legenda || ""),
       midia: (p.midia || []).map((m) => ({ url: m.url, tipo: m.tipo === "video" ? "video" : "imagem" })),
+      colaboradores: p.tipo === "stories" ? [] : (p.colaboradores || []),
       quando: p.quando,
     };
     sessionStorage.setItem("bt_prefill", JSON.stringify(prefill));
@@ -228,6 +232,11 @@ export default function Calendario() {
                             <span className={`text-[11px] font-semibold ${c.txt}`}>{c.label}</span>
                           </div>
                           {p.legenda && <p className="text-xs text-azul-suave mt-1 line-clamp-2">{p.legenda}</p>}
+                          {p.erro && (
+                            <p className={`text-[11px] mt-1 font-semibold ${p.erro.includes("SEM collab") ? "text-magenta" : "text-magenta"}`}>
+                              {p.erro.includes("SEM collab") ? "⚠️ publicado sem a marcação (um @ falhou)" : `⚠️ ${p.erro}`}
+                            </p>
+                          )}
                           {p.status === "planejado" && (
                             <button onClick={() => programar(p)} className="mt-2 text-xs font-bold px-3 py-1.5 rounded-full bg-verde text-white hover:bg-verde-bright transition">
                               Programar este →

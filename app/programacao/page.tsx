@@ -13,6 +13,7 @@ type PlanoPost = {
   status: string;
   caption: string;
   hook: string;
+  colaboradores?: string[];
   tipos: Tipo[];
   midia: { url: string; tipo: "imagem" | "video" }[];
   podePuxar: boolean;
@@ -61,6 +62,7 @@ export default function Programacao() {
       legenda: tipo === "stories" ? "" : p.caption,
       midia: p.midia,
       data: p.data,
+      colaboradores: tipo === "stories" ? [] : (p.colaboradores || []),
     };
     sessionStorage.setItem("bt_prefill", JSON.stringify(prefill));
     router.push("/");

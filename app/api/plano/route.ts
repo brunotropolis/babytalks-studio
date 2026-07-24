@@ -42,6 +42,7 @@ export async function GET() {
         status: p.status,
         caption: p.caption || "",
         hook: p.hook || "",
+        colaboradores: Array.isArray(p.colaboradores) ? p.colaboradores : [],
         tipos: formatoParaTipos(p.formato || ""),
         midia,
         podePuxar: midia.length > 0,
