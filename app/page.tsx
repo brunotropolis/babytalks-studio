@@ -46,12 +46,10 @@ export default function Studio() {
           nome: m.url.split("/").pop() || `midia-${i}`,
         })));
       }
-      if (p.data) {
-        const quandoISO = `${p.data}T09:00`;
-        if (new Date(quandoISO).getTime() > Date.now()) {
-          setAgendar(true);
-          setQuando(quandoISO);
-        }
+      const quandoISO = p.quando || (p.data ? `${p.data}T09:00` : "");
+      if (quandoISO && new Date(quandoISO).getTime() > Date.now()) {
+        setAgendar(true);
+        setQuando(quandoISO);
       }
       setResultado({ ok: true, msg: "Puxado da programação — revise e publique/agende. 👇" });
     } catch { /* ignora prefill inválido */ }
