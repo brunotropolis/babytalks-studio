@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 // Protege tudo, menos login, a API de login, os crons (têm x-cron-secret) e assets.
-const PUBLICO = ["/login", "/api/login", "/api/cron"];
+const PUBLICO = ["/login", "/api/login", "/api/cron", "/api/plano/sincronizar"];
 
 function tokenEsperado(): string {
   const senha = process.env.APP_SENHA || "";
